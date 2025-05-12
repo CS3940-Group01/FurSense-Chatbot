@@ -18,9 +18,9 @@ async def inference(request: InferenceRequest):
         client = Client("GayanKK/FurSense-Chat")  # moved inside function
         result = client.predict(
             input=request.question,
-            api_name="/chatbot"
+            api_name="/predict"
         )
-        print(result)
+    #    print(result)
         return {"response": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}")
