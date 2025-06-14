@@ -26,7 +26,11 @@ async def get_chat_history(request: Request):
         
         return {"chat_history": chat_history}
     else:
-        return {"chat_history": []}
+        collection = database[user_id]
+        collection.insert_one({
+        { "id": "1", "sender": "bot", "text": "Hi, I'm your FurBot. How can I assist you today?"}
+        })
+        return {"chat_history": [{"id": "1", "sender": "bot", "text": "Hi, I'm your FurBot. How can I assist you today?"}]}
     
 
 
@@ -53,9 +57,18 @@ async def inference(request: InferenceRequest, req1uest: Request):
             collection = database[user_id]
         else:
             collection = database[user_id]
+            
+        number_of_messages = collection.count_documents({})    
+        
         collection.insert_one({
-            "question": request.question,
-            "answer": result
+            "id": number_of_messages + 1,
+            "sender": "user",
+            "text": request.question
+        })
+        collection.insert_one({
+            "id": number_of_messages + 2,
+            "sender": "bot",
+            "text": result
         })
             
         return {"response": result}
