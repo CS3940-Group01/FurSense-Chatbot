@@ -27,9 +27,9 @@ async def get_chat_history(request: Request):
         return {"chat_history": chat_history}
     else:
         collection = database[user_id]
-        collection.insert_one({
+        collection.insert_one([
         { "id": "1", "sender": "bot", "text": "Hi, I'm your FurBot. How can I assist you today?"}
-        })
+        ])
         return {"chat_history": [{"id": "1", "sender": "bot", "text": "Hi, I'm your FurBot. How can I assist you today?"}]}
     
 
