@@ -1,7 +1,7 @@
 """FastAPI application for FurSense Chatbot with MongoDB integration"""
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter
 from gradio_client import Client
 from pydantic import BaseModel
 from pymongo import MongoClient
@@ -16,11 +16,13 @@ class InferenceRequest(BaseModel):
 
 
 app = FastAPI()
-mongodb_client = MongoClient()
+router = APIRouter(prefix="/chatbot")
+
+mongodb_client = MongoClient(URL)
 database = mongodb_client["furbot"]
 
 
-@app.get("/get_chat_history")
+@router.get("/get_chat_history")
 async def get_chat_history(request: Request):
     """Endpoint to retrieve chat history for a user"""
     user_id = request.headers.get("userId")
@@ -39,7 +41,7 @@ async def get_chat_history(request: Request):
 
 
 # Endpoint to delete chat history
-@app.delete("/delete_chat_history")
+@router.delete("/delete_chat_history")
 async def delete_chat_history(request: Request):
     """Endpoint to delete chat history for a user"""
     user_id = request.headers.get("userId")
@@ -58,7 +60,7 @@ async def delete_chat_history(request: Request):
     return {"chat_history": [{"id": 1, "sender": "bot", "text": "Hi, I'm your FurBot. How can I assist you today?"}]}
 
 
-@app.post("/inference")
+@router.post("/inference")
 async def inference(request: InferenceRequest, req1uest: Request):
     """
     Perform inference on the given question.
@@ -106,3 +108,6 @@ async def inference(request: InferenceRequest, req1uest: Request):
     })
 
     return {"response": result}
+
+
+app.include_router(router)
