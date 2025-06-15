@@ -1,0 +1,45 @@
+name: FastAPI Blue-Green Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: SSH and Deploy to Green
+        uses: appleboy/ssh-action@v0.1.1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            # Sync green to blue and switch traffic to blue
+            rsync -avz --delete /var/www/green/ /var/www/blue/
+            sudo systemctl restart uvicorn_blue
+            sudo sed -i 's/app_green/app_blue/g' /etc/nginx/sites-available/fastapi
+            sudo systemctl reload nginx
+
+            # Deploy the latest code to green
+            cd /var/www/green
+            git pull origin main
+            source venv/bin/activate
+
+            uvicorn app:app --host 127.0.0.1 --port 8002 --workers 4 --daemon
+
+            # Check health of the green environment
+            curl -f http://127.0.0.1:8002/health || {
+                echo "Deployment failed. Keeping traffic on blue.";
+                exit 1;
+            }
+
+            # Switch traffic to green if successful
+            sudo sed -i 's/app_blue/app_green/g' /etc/nginx/sites-available/fastapi
+            sudo systemctl reload nginx
